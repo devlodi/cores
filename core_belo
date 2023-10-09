@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mistura de Cores</title>
+    <style> 
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f0f0f0;
+}
+
+.controls {
+    margin-bottom: 20px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.buttons {
+    margin-top: 10px;
+}
+
+button {
+    background-color: #008CBA; 
+    border: none;
+    color: white;
+    padding: 10px 24px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: white; 
+    color: black; 
+    border: 2px solid #008CBA;
+}
+
+#addedColors div, #result {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 5px;
+    cursor: pointer;
+}
+
+#result {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+}
+
+.selected {
+    border: 2px solid #008CBA;
+}
+
+.color-picker {
+    width: 100%;
+    border: none;
+    padding: 0;
+    margin-bottom: 10%;
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <p>Selecione uma cor, clique em "Adicionar Cor" para adicionar a cor. Clique em uma cor adicionada para selecioná-la, depois você pode editar ou excluir a cor selecionada.</p>
+        <div id="color-picker-container">
+    <input type="color" id="colorInput" value="#ff0000" class="color-picker">
+</div>
+
+
+        <div class="buttons">
+            <button onclick="addColor()">Adicionar Cor</button>
+            <button onclick="editColor()">Editar Cor</button>
+            <button onclick="deleteColor()">Excluir Cor</button>
+        </div>
+    </div>
+    <div id="addedColors"></div>
+    <div id="result"></div>
+    <script>
+        let mixedColor = {r: 0, g: 0, b: 0};
+let colorCount = 0;
+let selectedColorDiv = null;
+
+function addColor() {
+    let colorInput = document.getElementById('colorInput');
+    let colorValue = colorInput.value;
+    let color = hexToRgb(colorValue);
+    
+    mixedColor.r = Math.round((mixedColor.r * colorCount + color.r) / (colorCount + 1));
+    mixedColor.g = Math.round((mixedColor.g * colorCount + color.g) / (colorCount + 1));
+    mixedColor.b = Math.round((mixedColor.b * colorCount + color.b) / (colorCount + 1));
+    
+    colorCount++;
+    
+    let newColorDiv = document.createElement('div');
+    newColorDiv.style.backgroundColor = colorValue;
+    document.getElementById('addedColors').appendChild(newColorDiv);
+    
+    document.getElementById('result').style.backgroundColor = rgbToHex(mixedColor.r, mixedColor.g, mixedColor.b);
+
+    newColorDiv.onclick = function() {
+        if (selectedColorDiv) {
+            selectedColorDiv.classList.remove('selected');
+        }
+        selectedColorDiv = newColorDiv;
+        selectedColorDiv.classList.add('selected');
+    };
+
+    colorInput.blur();  // Esta linha remove o foco do seletor de cores, fechando o painel de seleção de cores
+}
+
+
+
+function editColor() {
+    if (selectedColorDiv) {
+        let newColor = document.getElementById('colorInput').value;
+        console.log(newColor);  // Log the new color value to the console
+        selectedColorDiv.style.backgroundColor = newColor;
+        recalculateMixedColor();
+    } else {
+        alert('Por favor, selecione uma cor antes de editar.');  // Mensagem de aviso
+    }
+}
+
+
+function deleteColor() {
+    if (selectedColorDiv) {
+        document.getElementById('addedColors').removeChild(selectedColorDiv);
+        recalculateMixedColor();
+        selectedColorDiv = null;
+    }
+    else {
+        alert('Por favor, selecione uma cor antes de excluir.');  // Mensagem de aviso
+    }
+
+
+}
+
+function recalculateMixedColor() {
+    let colors = document.getElementById('addedColors').children;
+    mixedColor = {r: 0, g: 0, b: 0};
+    colorCount = 0;
+    for (let colorDiv of colors) {
+        let color = rgbStringToObject(colorDiv.style.backgroundColor);
+        mixedColor.r += color.r;
+        mixedColor.g += color.g;
+        mixedColor.b += color.b;
+        colorCount++;
+    }
+    if (colorCount > 0) {
+        mixedColor.r = Math.round(mixedColor.r / colorCount);
+        mixedColor.g = Math.round(mixedColor.g / colorCount);
+        mixedColor.b = Math.round(mixedColor.b / colorCount);
+    }
+    document.getElementById('result').style.backgroundColor = rgbToHex(mixedColor.r, mixedColor.g, mixedColor.b);
+}
+
+
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) | ((r & 255) << 16) | ((g & 255) << 8) | (b & 255)).toString(16).slice(1).toUpperCase();
+}
+
+function rgbStringToObject(rgbString) {
+    const rgbValues = rgbString.match(/\d+/g);
+    return {
+        r: parseInt(rgbValues[0]),
+        g: parseInt(rgbValues[1]),
+        b: parseInt(rgbValues[2])
+    };
+}
+
+
+let isColorPickerOpen = false;
+
+document.getElementById('colorInput').addEventListener('focus', function() {
+    document.getElementById('color-picker-container').style.marginBottom = '80%';
+    isColorPickerOpen = true;
+});
+
+document.getElementById('colorInput').addEventListener('blur', function() {
+    if (!isColorPickerOpen) return;
+    document.getElementById('color-picker-container').style.marginBottom = '0';
+    isColorPickerOpen = false;
+});
+
+document.getElementById('colorInput').addEventListener('input', function() {
+    document.getElementById('color-picker-container').style.marginBottom = '0';
+    isColorPickerOpen = false;
+});
+
+        
+    </script>
+</body>
+</html>
